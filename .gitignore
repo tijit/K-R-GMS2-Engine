@@ -1,0 +1,2 @@
+# ignore LDtk backups folder
+/datafiles/*/backups/*

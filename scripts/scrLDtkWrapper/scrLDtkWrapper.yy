@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scrLDtkWrapper",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scrLDtkWrapper",
+  "parent":{
+    "name":"LDtk",
+    "path":"folders/LDtk.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

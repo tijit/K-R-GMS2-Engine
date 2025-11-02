@@ -1,0 +1,586 @@
+/*
+original code from https://github.com/evolutionleo/LDtkParser/releases
+v1.3 or v1.4 i cant remember
+
+edited to work with "save rooms as separate files" checkbox
+
+see loadLevel() and warpPlayerTo(), and the "howto" note
+
+*/
+
+function __LDtkTrace(str) {
+	if (!LDTK_LOGS) return;
+	if !is_string(str)
+		str = string(str)
+	
+	for(var i = 1; i < argument_count; i++) {
+		if string_pos("%", str)
+			str = string_replace( str, "%", string(argument[i]) )
+		else
+			str += " " + string(argument[i])
+	}
+	show_debug_message("[LDtk parser] " + str)
+}
+
+///@function	LDtkConfig(config)
+///@description Changes some config variables
+function LDtkConfig(config) {
+	var config_names = variable_struct_get_names(config)
+	
+	for(var i = 0; i < array_length(config_names); ++i) {
+		var config_name = config_names[i]
+		var config_value = variable_struct_get(config, config_name)
+		
+		if (config_name == "mappings") {
+			// nested struct
+			LDtkMappings(config_value)
+		}
+		else {
+			variable_struct_set(global.__ldtk_config, config_name, config_value)
+		}
+	}
+}
+
+// if this is a useful script for you, you can copy it and rename to something like InheritVariables(src, dest)
+function __LDtkDeepInheritVariables(src, dest) {
+	var var_names = variable_struct_get_names(src)
+	
+	for(var i = 0; i < array_length(var_names); ++i) {
+		var var_name = var_names[i]
+		var var_value = variable_struct_get(src, var_name)
+		
+		if (is_struct(var_value) and is_struct(dest[$ (var_name)])) {
+			__LDtkDeepInheritVariables(var_value, dest[$ (var_name)])
+		}
+		else {
+			variable_struct_set(dest, var_name, var_value)
+		}
+	}
+}
+
+function __LDtkPreparePoint(point, tile_size) {
+	if !is_struct(point) and point == pointer_null { // if the field is null
+		//show_message(point)
+		return undefined
+	}
+	
+	if tile_size == undefined
+		return { x: point.cx, y: point.cy }
+	else
+		return { x: point.cx * tile_size, y: point.cy * tile_size }				
+}
+
+function __LDtkPrepareColor(color) {
+	// cut the #
+	color = string_copy(color, 2, string_length(color)-1)
+	// extract the colors
+	var red = hex_to_dec(string_copy(color, 1, 2))
+	var green = hex_to_dec(string_copy(color, 3, 2))
+	var blue = hex_to_dec(string_copy(color, 5, 2))
+	
+	return make_color_rgb(red, green, blue)
+}
+
+function __LDtkPrepareEnum(_enum_name, value) {
+	if value == pointer_null
+		return value
+	
+	var result = global.__ldtk_config.mappings.enums[$ (_enum_name)]
+	
+	if result == undefined or result[$ (value)] == undefined
+		return value // just return the string
+	else
+		return result[$ (value)]
+}
+
+///@function	LDtkMappings(mappings)
+///@description	Updates __ldtk_config.mappings
+function LDtkMappings(mappings) {
+	__LDtkDeepInheritVariables(mappings, global.__ldtk_config.mappings)
+}
+
+///@function	LDtkLoad(level_name*)
+///@description	Loads a level from an LDtk project
+///@param		{string} level_name*
+function LDtkLoad(level_name, force_fromfile=false) {
+	__LDtkTrace("Starting to load!")
+	
+	var config = global.__ldtk_config
+	
+	var file = config.file;
+	
+	if is_undefined(argument[0]) or level_name == "" {
+		if config.level_name != ""
+			level_name = config.level_name
+		else
+			level_name = "" // then defined below
+	}
+	
+	if (force_fromfile || is_undefined(global.LDtkWorldData)) {
+		LDtkInit();
+	}
+	
+	var data = global.LDtkWorldData;
+	//var worlds = data[$ "worlds"] ?? [ ];
+	var worlds = [ ];
+	var noworlds = true; //(array_length(worlds) == 0);
+	
+	var info = getLevelInfoFromName(level_name);
+	
+	var level = noworlds ?
+				data.levels[info.levelnum].data :
+				data.worlds[info.worldnum].levels[info.levelnum].data;
+	
+	if is_undefined(level) {
+		__LDtkTrace("Error! Cannot find the matching level")
+		return -1
+	}
+	
+	// resize the room
+	var level_w = level.pxWid
+	var level_h = level.pxHei
+	
+	global.worldX = level.worldX;
+	global.worldY = level.worldY;
+	
+	global.LDtkLevelNumber = info.levelnum;
+	
+	/* this is done elsewhere now
+	room_set_width(room, level_w)
+	room_set_height(room, level_h)
+	*/
+	
+	// recolour background layer
+	var bgcol = __LDtkPrepareColor(level.__bgColor ?? "#000000");
+	var bglayer = layer_background_get_id("Background");
+	layer_background_blend(bglayer, bgcol);
+	
+	// for each layer in the level
+	for(var i = 0; i < array_length(level.layerInstances); i++) {
+		var this_layer = level.layerInstances[i]
+		var _layer_name = this_layer.__identifier
+		
+		var gm_layer_name = config.mappings.layers[$ (_layer_name)]
+		if gm_layer_name == undefined
+			gm_layer_name = _layer_name
+		
+		var gm_layer_id = layer_get_id(gm_layer_name)
+		
+		if (gm_layer_id == -1) {
+			__LDtkTrace(gm_layer_name, "not found, ignoring layer!")
+			continue
+		}
+		
+		var intgr = false;
+		switch(this_layer.__type) {
+			case "Entities": // instances
+				var tile_size = this_layer.__gridSize // for scaling
+				
+				var entity_references = {};
+				var entity_ref_fetch_list = [];
+				
+				// for every entity in the level
+				for(var e = 0; e < array_length(this_layer.entityInstances); ++e) {
+					var entity = this_layer.entityInstances[e]
+					var entity_name = entity.__identifier
+					
+					var obj_name = config.mappings.entities[$ (entity_name)]
+					if obj_name == undefined
+						obj_name = entity_name
+					
+					if string_char_at(obj_name, 1) != config.object_prefix
+						obj_name = config.object_prefix + obj_name
+					
+					var object_id = asset_get_index(obj_name)
+					
+					if (object_id == -1) {
+						__LDtkTrace(obj_name, "not found in GM, ignoring!")
+						continue
+					}
+					
+					var _x = entity.px[0] + this_layer.__pxTotalOffsetX
+					var _y = entity.px[1] + this_layer.__pxTotalOffsetY
+					
+					//var inst = instance_create_layer(_x, _y, gm_layer_id, objLDtkEmpty) // we'll need instance_change() to work around the create event
+					
+					var isSpawner = false;
+					if (entity.iid == global.LDtkSpawnEntity) {
+						isSpawner = true;
+						global.LDtkSpawnEntity = "";
+					}
+					
+					var xs = 1;
+					var ys = 1;
+					var spr = object_get_sprite(object_id)
+					if (sprite_exists(spr)) {
+						var sw = sprite_get_width(spr)
+						var sh = sprite_get_height(spr)
+					
+						xs = entity.width / sw
+						ys = entity.height / sh
+					}
+					
+					// Load the fields
+					
+					var instanceFields = {
+						"image_xscale" : xs,
+						"image_yscale" : ys,
+					};
+					
+					// for each field of the entity
+					for(var f = 0; f < array_length(entity.fieldInstances); ++f) {
+						var field = entity.fieldInstances[f]
+						
+						var field_name = field.__identifier
+						var field_value = field.__value
+						var field_type = field.__type
+						
+						var gm_field_name = config.mappings.fields[$ (field_name)]
+						if gm_field_name == undefined
+							gm_field_name = field_name
+						
+						
+						// some types require additional work
+						switch(field_type) {
+							case "Bool":
+								
+								break;
+							case "Point":
+								field_value = __LDtkPreparePoint(field_value, tile_size)
+								break
+							case "Array<Point>":
+								for(var j = 0; j < array_length(field_value); j++) {
+									field_value[@ j] = __LDtkPreparePoint(field_value[j])
+								}
+								break
+							case "Color": // colors should be actual colors
+								field_value = __LDtkPrepareColor(field_value)
+								break
+							case "Array<Color>":
+								for(var j = 0; j < array_length(field_value); j++) {
+									field_value[@ j] = __LDtkPrepareColor(field_value[j])
+								}
+								break
+							case "EntityRef":
+								// allow pointers to other instances be missing
+								var entityIid = noone;
+								var levelName = level.identifier;
+								if (field_value != pointer_null && field_value != null) {
+									entityIid = field_value.entityIid;
+									levelName = global.LDtkMapInfo[$ field_value.levelIid].name;
+								}
+								//show_debug_message("entityIid="+string(entityIid)+", levelName="+string(levelName));
+								// add to entity_ref_fetch_list so we can add the proper reference later
+								array_push(entity_ref_fetch_list, {
+									"gm_instance": inst,
+									"gm_var_name": gm_field_name,
+									"entity_ref": entityIid,
+									"level_name": levelName,
+									"isarray": false,
+									"arrayindex": 0,
+								})
+								break
+							case "Array<EntityRef>": // THIS IS BROKEN!
+								debugPrint("Array<EntityRef>="+string(field_value));
+								for (var j = 0; j < array_length(field_value); j++) {
+									var val = field_value[@ j];
+									if (is_struct(val)) {
+										var entityIid = val[$ "entityIid"];
+										var levelName = level.identifier;
+										levelName = global.LDtkMapInfo[$ val.levelIid].name;
+										array_push(entity_ref_fetch_list, {
+											"gm_instance": inst,
+											"gm_var_name": gm_field_name,
+											"entity_ref": entityIid,
+											"level_name": levelName,
+											"isarray": true,
+											"arrayindex": j,
+										});
+									}
+									else {
+										debugPrint("val is not struct: "+string(val));
+									}
+								}
+								break;
+							default:
+								if (string_pos("LocalEnum", field_type)) {
+									var enum_name_idx = string_pos(".", field_type)
+									var enum_name_len = string_length(field_type)
+									var _enum_name = string_copy(field_type, enum_name_idx+1, 999)
+									
+									if (string_pos("Array<", field_type)) {
+										for(var j = 0; j < array_length(field_value); j++) {
+											field_value[@ j] = __LDtkPrepareEnum(_enum_name, field_value[j])
+										}
+									}
+									else {
+										field_value = __LDtkPrepareEnum(_enum_name, field_value)
+									}
+								}
+								break
+						}
+						
+						instanceFields[$ gm_field_name] = field_value;
+					}
+					
+					// so that we carry over all the variables
+					var inst = instance_create_layer(_x, _y, gm_layer_id, object_id, instanceFields);
+					
+					// add to entity_reference
+					entity_references[$ entity.iid] = inst;
+					
+					with(inst) {
+						if (isSpawner) {
+							spawnPlayer();
+						}
+					}
+					
+					__LDtkTrace("Loaded Entity! GM instance id=%", inst)
+				}
+				
+				// Add proper instance references to entity reference fields
+				for (var j = 0; j < array_length(entity_ref_fetch_list); ++j) {
+					var _fetch = entity_ref_fetch_list[j]
+					var _gm_inst = _fetch.gm_instance
+					var _e = entity_references[$ _fetch.entity_ref] ?? _fetch;
+					if (!_fetch.isarray) {
+						variable_instance_set(_gm_inst, _fetch.gm_var_name, _e);
+					}
+					else {
+						var arr = variable_instance_get(_gm_inst, _fetch.gm_var_name);
+						if (is_undefined(arr)) {
+							variable_instance_set(_gm_inst, _fetch.gm_var_name, [ ]);
+						}
+						arr[@ _fetch.arrayindex] = _e;
+					}
+					
+					//show_debug_message(string(_e));
+					//show_debug_message(string(entity_references[$ _fetch.entity_ref]));
+				}
+				
+				__LDtkTrace("Loaded an Entities Layer! name=%, gm_name=%", _layer_name, gm_layer_name)
+				break
+			case "AutoLayer":
+				__LDtkTrace("AutoLayers are ignored")
+				break
+			
+			case "IntGrid":
+				intgr = true;
+			case "Tiles": // tile map!
+				var tilemap = layer_tilemap_get_id(gm_layer_id)
+				// if this is commented, you can pipe different layers to 
+				//var empty_tile = 0
+				//tilemap_clear(tilemap, empty_tile)
+				
+				// this is layer's cell size
+				//var cwid = this_layer.__cWid
+				//var chei = this_layer.__cHei
+				
+				// this is tileset's cell size
+				var cwid = -1
+				var chei = -1
+				var tileset_def = undefined
+				
+				for(var ts = 0; ts < array_length(data.defs.tilesets); ++ts) {
+					tileset_def = data.defs.tilesets[ts]
+					
+					if tileset_def.uid == this_layer.__tilesetDefUid {
+						cwid = tileset_def.__cWid
+						chei = tileset_def.__cHei
+						
+						break
+					}
+				}
+				
+				if tileset_def == undefined
+					break
+				
+				var tile_size = this_layer.__gridSize
+				
+				// create tilemap if it doesn't exist on the layer
+				if (tilemap == -1) {
+					var tileset_name = tileset_def.identifier
+					var gm_tileset_name = config.mappings.tilesets[$ (tileset_name)]
+					
+					if gm_tileset_name == undefined
+						gm_tileset_name = tileset_name
+					
+					var gm_tileset_id = asset_get_index(gm_tileset_name)
+					
+					if gm_tileset_id == -1
+						break
+					
+					tilemap = layer_tilemap_create(gm_layer_id, this_layer.__pxTotalOffsetX, this_layer.__pxTotalOffsetY, gm_tileset_id, cwid * tile_size, chei * tile_size)
+					global.tilemaps[$ gm_layer_name] = tilemap;
+					
+				} else { // respect layer offsets
+					tilemap_x(tilemap, this_layer.__pxTotalOffsetX)
+					tilemap_y(tilemap, this_layer.__pxTotalOffsetY)
+				}
+				
+				var tileArray = !intgr ? this_layer.gridTiles : this_layer.autoLayerTiles;
+				//for(var t = 0; t < array_length(this_layer.gridTiles); ++t) {
+				for(var t = 0; t < array_length(tileArray); ++t) {
+					//var this_tile = this_layer.gridTiles[t]
+					var this_tile = tileArray[t]
+					
+					var _x = this_tile.px[0]
+					var _y = this_tile.px[1]
+					var cell_x = _x div tile_size
+					var cell_y = _y div tile_size
+					
+					var tile_src_x = this_tile.src[0],
+						tile_src_y = this_tile.src[1]
+					var tile_id = tile_src_x/tile_size + tile_src_y/tile_size*cwid
+					
+					var tile_data = tile_id
+					var x_flip = this_tile.f & 1
+					var y_flip = this_tile.f & 2
+					tile_data = tile_set_mirror(tile_data, x_flip)
+					tile_data = tile_set_flip(tile_data, y_flip)
+					
+					tilemap_set(tilemap, tile_data, cell_x, cell_y)
+				}
+				
+				__LDtkTrace("Loaded a Tile Layer! name=%, gm_name=%", _layer_name, gm_layer_name)
+				break
+			default:
+				__LDtkTrace("warning! undefined layer type! (%)", this_layer.__type)
+				break
+		}
+	}
+	
+	__LDtkTrace("Loaded!")
+	return 0
+}
+
+///@function	LDtkLive(level_name*)
+///@description	Similar to LDtkLoad(), but only reloads when changes are detected
+///@param		{string} level_name*
+function LDtkLive(level_name) {
+	var config = global.__ldtk_config
+	
+	var _ = argument[0]; _ = _
+	
+	
+	global.__ldtk_live_timer -= 1
+	
+	if (global.__ldtk_live_timer <= 0) {
+		global.__ldtk_live_timer = config.live_frequency
+		
+		//var hash = sha1_file(config.file)
+		var hash = md5_file(config.file)
+		
+		if (hash != global.__ldtk_live_hash) {
+			__LDtkTrace("Updating...")
+			__LDtkClear()
+			LDtkInit();
+			
+			var res = LDtkLoad(level_name, true)
+			global.__ldtk_live_hash = hash
+			
+			if (res < 0) {
+				__LDtkTrace("Live Update Failed!")
+			}
+			else
+				__LDtkTrace("Live Updated!")
+		}
+	}
+}
+
+function __LDtkClear() {
+	// yes
+	// actually bruh
+	room_restart()
+}
+
+///@function	LDtkReloadFields()
+///@description	Reloads fields from an isolated struct.
+///				This works around the Variable Definitions tab
+///				You don't need this in most cases
+///				You would want to call this in the Create Event
+///				Only works if __ldtk_config.escape_fields is set to `true`
+///@deprecated
+function LDtkReloadFields() {
+	//if (!global.__ldtk_config.escape_fields) {
+	//	__LDtkTrace("Warning: LDtkReloadFields() is called, but the `escape fields` config is turned off.\Did you mean to enable the config or not call the function? (Variables are loaded automatically by default)")
+	//	return -1
+	//}
+	
+	//if (!variable_instance_exists(self, "__ldtk_fields"))
+	//	return 0
+	
+	//var field_names = variable_struct_get_names(self.__ldtk_fields)
+	//for(var i = 0; i < array_length(field_names); ++i) {
+	//	var field_name = field_names[i]
+	//	var field_value = variable_struct_get(self.__ldtk_fields, field_name)
+		
+	//	variable_instance_set(id, field_name, field_value)
+	//}
+}
+
+// used for decoding colors' hex codes
+function hex_to_dec(str) {
+	if !is_string(str) str = string(str)
+	str = string_upper(str)
+	
+	var ans = 0
+	for(var i = 1; i <= string_length(str); ++i) {
+		ans *= 16
+		var c = string_char_at(str, i)
+		
+		if ord(c) >= ord("A")
+			ans += ord(c) - ord("A") + 10
+		else
+			ans += ord(c) - ord("0")
+		
+		//ans *= 16
+	}
+	
+	return ans
+}
+
+/// never manually call this
+function __init_tij_LDtk() {
+	gml_pragma("global", "__init_tij_LDtk()");
+	
+	global.LDtkCurrentMap = "";
+	global.LDtkLevelNumber = -1;
+	global.LDtkMapInfo = undefined;
+	global.LDtkWorldData = undefined;
+	global.worldMinX = 0;
+	global.worldMinY = 0;
+	global.worldX = 0;
+	global.worldY = 0;
+	
+	global.__ldtk_config = {
+		file: LDTK_PATH+LDTK_FILENAME,
+		level_name: "", // argument passed into LDtkLoad > config.level_name > current room level name
+		//level_name: "Level_0",
+		live_frequency: 15,
+	
+		// also note that LDtk defaults to the first letter being uppercase, this can be changed in the LDtk settings
+		room_prefix: "",
+		object_prefix: "obj",
+	
+		mappings: { // if a mapping doesn't exist - ldtk name (with a prefix) is used
+			levels: { // ldtk_level_name -> gm_room_name
+			
+			},
+			layers: { // ldtk_layer_name -> gm_room_layer_name
+				//Entities: "GameObjects",
+			},
+			enums: { // ldtk_enum_name -> { ldtk_enum_value -> gml_value }
+			},
+			entities: { // ldtk_entity_name -> gm_object_name
+			},
+			fields: { // ldtk_entity_name -> { ldtk_entity_field_name -> gm_instance_variable_name }
+			},
+			tilesets: { // ldtk_tileset_name -> gm_tileset_name
+			}
+		}
+	}
+	global.__ldtk_live_hash = "";
+	global.__ldtk_live_timer = -1;
+	global.tilemaps = { };
+}

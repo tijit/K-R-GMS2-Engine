@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scrLDtkInit",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scrLDtkInit",
+  "parent":{
+    "name":"LDtk",
+    "path":"folders/LDtk.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
