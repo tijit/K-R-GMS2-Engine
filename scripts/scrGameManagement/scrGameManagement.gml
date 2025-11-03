@@ -1,7 +1,7 @@
 function save_game(position) {
 	if (position) {
 		global.save_player.sroom = room_get_name(room);
-		global.save_player.sroomLDtk = global.LDtkCurrentMap;
+		global.save_player.sLDtkLevel = global.LDtkCurrentLevel;
 		global.save_player.sx = floor(objPlayer.x);
 		global.save_player.sy = floor(objPlayer.y);
 		global.save_player.sangle = global.player.angle;
@@ -66,7 +66,12 @@ function load_game(position) {
 		global.auto_save = false;
 		global.grav = global.save_player.sgrav;
 		instance_create_layer(global.save_player.sx, global.save_player.sy, "Player", objPlayer);
-		room_goto(asset_get_index(global.save_player.sroom));
+		global.LDtkCurrentLevel = global.save_player.sLDtkLevel;
+		var roomTo = asset_get_index(global.save_player.sroom);
+		if (roomTo == rLDtk) {
+			roomTo = rLDtkSetup;
+		}
+		room_goto(roomTo);
 	}
 	
 	#region Online

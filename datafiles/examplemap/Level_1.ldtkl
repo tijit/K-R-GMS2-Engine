@@ -210,7 +210,7 @@
 					"__worldY": 512
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [4,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -226,7 +226,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [5,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -242,7 +242,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [7,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -258,7 +258,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [6,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -274,7 +274,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [8,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -290,7 +290,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [9,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -306,7 +306,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [10,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -322,7 +322,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [11,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -338,7 +338,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [12,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -354,7 +354,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [13,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -370,7 +370,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [14,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -386,7 +386,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [15,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -402,7 +402,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [16,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -418,7 +418,7 @@
 					"__worldY": 560
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [17,35],
 					"__pivot": [0,0],
 					"__tags": ["killer"],

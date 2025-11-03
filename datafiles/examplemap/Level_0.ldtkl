@@ -213,7 +213,7 @@
 					"__worldY": 416
 				},
 				{
-					"__identifier": "MiniSpikeUp",
+					"__identifier": "MiniUp",
 					"__grid": [11,21],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -229,7 +229,7 @@
 					"__worldY": 336
 				},
 				{
-					"__identifier": "MiniSpikeDown",
+					"__identifier": "MiniDown",
 					"__grid": [11,22],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -245,7 +245,7 @@
 					"__worldY": 352
 				},
 				{
-					"__identifier": "MiniSpikeLeft",
+					"__identifier": "MiniLeft",
 					"__grid": [12,21],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -261,7 +261,7 @@
 					"__worldY": 336
 				},
 				{
-					"__identifier": "MiniSpikeRight",
+					"__identifier": "MiniRight",
 					"__grid": [13,21],
 					"__pivot": [0,0],
 					"__tags": ["killer"],
@@ -371,6 +371,54 @@
 					}] }],
 					"__worldX": 448,
 					"__worldY": 544
+				},
+				{
+					"__identifier": "LDtkDoor",
+					"__grid": [16,18],
+					"__pivot": [0,0],
+					"__tags": ["door"],
+					"__tile": { "tilesetUid": 16, "x": 384, "y": 16, "w": 16, "h": 16 },
+					"__smartColor": "#006DDB",
+					"iid": "7fb32890-ac70-11f0-b1f6-5fb80bdb5dcb",
+					"width": 32,
+					"height": 32,
+					"defUid": 45,
+					"px": [256,288],
+					"fieldInstances": [{ "__identifier": "destination", "__type": "EntityRef", "__value": {
+						"entityIid": "81a27570-ac70-11f0-b1f6-855799957d9d",
+						"layerIid": "0c148a40-ac70-11f0-b23f-9b1da96580ae",
+						"levelIid": "8646d8f0-ac70-11f0-b23f-f339b6282744",
+						"worldIid": "8646b1e0-ac70-11f0-b23f-27980acf68b2"
+					}, "__tile": null, "defUid": 46, "realEditorValues": [{
+						"id": "V_String",
+						"params": ["81a27570-ac70-11f0-b1f6-855799957d9d"]
+					}] }],
+					"__worldX": 256,
+					"__worldY": 288
+				},
+				{
+					"__identifier": "LDtkDoor",
+					"__grid": [22,20],
+					"__pivot": [0,0],
+					"__tags": ["door"],
+					"__tile": { "tilesetUid": 16, "x": 384, "y": 16, "w": 16, "h": 16 },
+					"__smartColor": "#006DDB",
+					"iid": "81a27570-ac70-11f0-b1f6-855799957d9d",
+					"width": 32,
+					"height": 32,
+					"defUid": 45,
+					"px": [352,320],
+					"fieldInstances": [{ "__identifier": "destination", "__type": "EntityRef", "__value": {
+						"entityIid": "7fb32890-ac70-11f0-b1f6-5fb80bdb5dcb",
+						"layerIid": "0c148a40-ac70-11f0-b23f-9b1da96580ae",
+						"levelIid": "8646d8f0-ac70-11f0-b23f-f339b6282744",
+						"worldIid": "8646b1e0-ac70-11f0-b23f-27980acf68b2"
+					}, "__tile": null, "defUid": 46, "realEditorValues": [{
+						"id": "V_String",
+						"params": ["7fb32890-ac70-11f0-b1f6-5fb80bdb5dcb"]
+					}] }],
+					"__worldX": 352,
+					"__worldY": 320
 				}
 			]
 		},

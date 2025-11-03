@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scrLDtk",
   "parent":{
-    "name":"LDtk",
-    "path":"folders/LDtk.yy",
+    "name":"lib",
+    "path":"folders/LDtk/lib.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

@@ -269,10 +269,10 @@ function LDtkLoad(level_name, force_fromfile=false) {
 									entityIid = field_value.entityIid;
 									levelName = global.LDtkMapInfo[$ field_value.levelIid].name;
 								}
-								//show_debug_message("entityIid="+string(entityIid)+", levelName="+string(levelName));
 								// add to entity_ref_fetch_list so we can add the proper reference later
 								array_push(entity_ref_fetch_list, {
-									"gm_instance": inst,
+									//"gm_instance": inst,
+									"owner_ref": entity.iid,
 									"gm_var_name": gm_field_name,
 									"entity_ref": entityIid,
 									"level_name": levelName,
@@ -281,7 +281,7 @@ function LDtkLoad(level_name, force_fromfile=false) {
 								})
 								break
 							case "Array<EntityRef>": // THIS IS BROKEN!
-								debugPrint("Array<EntityRef>="+string(field_value));
+								//debugPrint("Array<EntityRef>="+string(field_value));
 								for (var j = 0; j < array_length(field_value); j++) {
 									var val = field_value[@ j];
 									if (is_struct(val)) {
@@ -298,7 +298,7 @@ function LDtkLoad(level_name, force_fromfile=false) {
 										});
 									}
 									else {
-										debugPrint("val is not struct: "+string(val));
+										//debugPrint("val is not struct: "+string(val));
 									}
 								}
 								break;
@@ -329,8 +329,8 @@ function LDtkLoad(level_name, force_fromfile=false) {
 					// add to entity_reference
 					entity_references[$ entity.iid] = inst;
 					
-					with(inst) {
-						if (isSpawner) {
+					if (isSpawner) {
+					with (inst) {
 							spawnPlayer();
 						}
 					}
@@ -341,7 +341,8 @@ function LDtkLoad(level_name, force_fromfile=false) {
 				// Add proper instance references to entity reference fields
 				for (var j = 0; j < array_length(entity_ref_fetch_list); ++j) {
 					var _fetch = entity_ref_fetch_list[j]
-					var _gm_inst = _fetch.gm_instance
+					//var _gm_inst = _fetch.gm_instance
+					var _gm_inst = entity_references[$ _fetch.owner_ref];
 					var _e = entity_references[$ _fetch.entity_ref] ?? _fetch;
 					if (!_fetch.isarray) {
 						variable_instance_set(_gm_inst, _fetch.gm_var_name, _e);
@@ -353,9 +354,6 @@ function LDtkLoad(level_name, force_fromfile=false) {
 						}
 						arr[@ _fetch.arrayindex] = _e;
 					}
-					
-					//show_debug_message(string(_e));
-					//show_debug_message(string(entity_references[$ _fetch.entity_ref]));
 				}
 				
 				__LDtkTrace("Loaded an Entities Layer! name=%, gm_name=%", _layer_name, gm_layer_name)
@@ -544,7 +542,8 @@ function hex_to_dec(str) {
 function __init_tij_LDtk() {
 	gml_pragma("global", "__init_tij_LDtk()");
 	
-	global.LDtkCurrentMap = "";
+	global.LDtkCurrentLevel = "";
+	global.LDtkSpawnEntity = "";
 	global.LDtkLevelNumber = -1;
 	global.LDtkMapInfo = undefined;
 	global.LDtkWorldData = undefined;

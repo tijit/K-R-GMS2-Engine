@@ -54,10 +54,25 @@ hit = approach(hit, 0, 1);
 image_alpha = (hit > 0) ? 0.7 : 1;
 #endregion
 
-#region Touches screen border
-if (global.outside_kills && outside_room()) {
-	kill_player();
+if (!inLDtkRoom()) {
+	#region Touches screen border
+	if (global.outside_kills && outside_room()) {
+		kill_player();
+	}
+	#endregion
 }
-#endregion
+else {
+	var levnum = findLevelAtCoordinates(x, y);
+	if (levnum > -1 && levnum != global.LDtkLevelNumber) {
+		var distToEdge = point_distance(clamp(x, 0, room_width)-x, clamp(y, 0, room_height)-y, 0, 0);
+		
+		// load new level instantly bc u went out of bounds or whatever
+		global.LDtkLevelNumber = levnum;
+		var lev = global.LDtkWorldData.levels[levnum];
+		x += global.worldX - lev.worldX;
+		y += global.worldY - lev.worldY;
+		loadLevel(lev.identifier);
+	}
+}
 
 set_mask();

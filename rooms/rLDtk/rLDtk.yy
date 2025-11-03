@@ -20,8 +20,8 @@
   ],
   "name":"rLDtk",
   "parent":{
-    "name":"LDtk",
-    "path":"folders/LDtk.yy",
+    "name":"lib",
+    "path":"folders/LDtk/lib.yy",
   },
   "parentRoom":null,
   "physicsSettings":{

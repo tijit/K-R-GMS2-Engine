@@ -27,7 +27,6 @@ function LDtkInit() {
 		//var json = buffer_read(buffer, buffer_string);
 		
 		global.LDtkWorldData = json_parse(buffer_read(buffer, buffer_string));
-
 		
 		buffer_delete(buffer);
 	}

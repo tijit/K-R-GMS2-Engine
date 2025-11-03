@@ -13,8 +13,8 @@ if (room == rLDtkSetup) {
 	room_goto(rLDtk);
 }
 else {
-	// load global.LDtkCurrentMap
-	LDtkLoad(global.LDtkCurrentMap);
+	// load global.LDtkCurrentLevel
+	LDtkLoad(global.LDtkCurrentLevel);
 	persistent = false;
 	
 	//instance_destroy();

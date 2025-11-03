@@ -650,7 +650,7 @@
 			"fieldDefs": []
 		},
 		{
-			"identifier": "MiniSpikeUp",
+			"identifier": "MiniUp",
 			"uid": 27,
 			"tags": ["killer"],
 			"exportToToc": false,
@@ -685,7 +685,7 @@
 			"fieldDefs": []
 		},
 		{
-			"identifier": "MiniSpikeDown",
+			"identifier": "MiniDown",
 			"uid": 28,
 			"tags": ["killer"],
 			"exportToToc": false,
@@ -720,7 +720,7 @@
 			"fieldDefs": []
 		},
 		{
-			"identifier": "MiniSpikeLeft",
+			"identifier": "MiniLeft",
 			"uid": 29,
 			"tags": ["killer"],
 			"exportToToc": false,
@@ -755,7 +755,7 @@
 			"fieldDefs": []
 		},
 		{
-			"identifier": "MiniSpikeRight",
+			"identifier": "MiniRight",
 			"uid": 30,
 			"tags": ["killer"],
 			"exportToToc": false,
