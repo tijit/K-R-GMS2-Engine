@@ -268,40 +268,45 @@ function LDtkLoad(level_name, force_fromfile=false) {
 								if (field_value != pointer_null && field_value != null) {
 									entityIid = field_value.entityIid;
 									levelName = global.LDtkMapInfo[$ field_value.levelIid].name;
+									
+									// add to entity_ref_fetch_list so we can add the proper reference later
+									array_push(entity_ref_fetch_list, {
+										//"gm_instance": inst,
+										"owner_ref": entity.iid,
+										"gm_var_name": gm_field_name,
+										"entity_ref": entityIid,
+										"level_name": levelName,
+										"isarray": false,
+										"arrayindex": 0,
+									});
 								}
-								// add to entity_ref_fetch_list so we can add the proper reference later
-								array_push(entity_ref_fetch_list, {
-									//"gm_instance": inst,
-									"owner_ref": entity.iid,
-									"gm_var_name": gm_field_name,
-									"entity_ref": entityIid,
-									"level_name": levelName,
-									"isarray": false,
-									"arrayindex": 0,
-								})
+								else {
+									field_value = noone;
+								}
+								
 								break
-							case "Array<EntityRef>": // THIS IS BROKEN!
-								//debugPrint("Array<EntityRef>="+string(field_value));
-								for (var j = 0; j < array_length(field_value); j++) {
-									var val = field_value[@ j];
-									if (is_struct(val)) {
-										var entityIid = val[$ "entityIid"];
-										var levelName = level.identifier;
-										levelName = global.LDtkMapInfo[$ val.levelIid].name;
-										array_push(entity_ref_fetch_list, {
-											"gm_instance": inst,
-											"gm_var_name": gm_field_name,
-											"entity_ref": entityIid,
-											"level_name": levelName,
-											"isarray": true,
-											"arrayindex": j,
-										});
-									}
-									else {
-										//debugPrint("val is not struct: "+string(val));
-									}
-								}
-								break;
+							//case "Array<EntityRef>": // THIS IS BROKEN!
+							//	//debugPrint("Array<EntityRef>="+string(field_value));
+							//	for (var j = 0; j < array_length(field_value); j++) {
+							//		var val = field_value[@ j];
+							//		if (is_struct(val)) {
+							//			var entityIid = val[$ "entityIid"];
+							//			var levelName = level.identifier;
+							//			levelName = global.LDtkMapInfo[$ val.levelIid].name;
+							//			array_push(entity_ref_fetch_list, {
+							//				"gm_instance": inst,
+							//				"gm_var_name": gm_field_name,
+							//				"entity_ref": entityIid,
+							//				"level_name": levelName,
+							//				"isarray": true,
+							//				"arrayindex": j,
+							//			});
+							//		}
+							//		else {
+							//			//debugPrint("val is not struct: "+string(val));
+							//		}
+							//	}
+							//	break;
 							default:
 								if (string_pos("LocalEnum", field_type)) {
 									var enum_name_idx = string_pos(".", field_type)
@@ -323,14 +328,35 @@ function LDtkLoad(level_name, force_fromfile=false) {
 						instanceFields[$ gm_field_name] = field_value;
 					}
 					
-					// so that we carry over all the variables
+					// special case for objLDtkAnything
+					// spawn an instance of "objectName"
+					// give it the same fields
+					var is_anything = (object_id == objLDtkAnything);
+					
+					if (is_anything) {
+						var replace_with = asset_get_index(instanceFields.objectName);
+						if (replace_with != -1) {
+							object_id = replace_with;
+						}
+					}
+					
 					var inst = instance_create_layer(_x, _y, gm_layer_id, object_id, instanceFields);
+					
+					// make sure the object created has an empty onTrigger() method to avoid crashes
+					// when a trigger is pointing at it
+					if (is_anything) {
+						if (variable_instance_get(inst, "onTrigger") == undefined) {
+							with (inst) {
+								onTrigger = function() {};
+							}
+						}
+					}
 					
 					// add to entity_reference
 					entity_references[$ entity.iid] = inst;
 					
 					if (isSpawner) {
-					with (inst) {
+						with (inst) {
 							spawnPlayer();
 						}
 					}
@@ -343,6 +369,8 @@ function LDtkLoad(level_name, force_fromfile=false) {
 					var _fetch = entity_ref_fetch_list[j]
 					//var _gm_inst = _fetch.gm_instance
 					var _gm_inst = entity_references[$ _fetch.owner_ref];
+					// if this is undefined, its an entity in a different level,
+					// so just pass along the struct of data
 					var _e = entity_references[$ _fetch.entity_ref] ?? _fetch;
 					if (!_fetch.isarray) {
 						variable_instance_set(_gm_inst, _fetch.gm_var_name, _e);
@@ -458,7 +486,7 @@ function LDtkLoad(level_name, force_fromfile=false) {
 function LDtkLive(level_name) {
 	var config = global.__ldtk_config
 	
-	var _ = argument[0]; _ = _
+	var _ = argument[0]; _ = _ // ???
 	
 	
 	global.__ldtk_live_timer -= 1
@@ -500,6 +528,7 @@ function __LDtkClear() {
 ///				Only works if __ldtk_config.escape_fields is set to `true`
 ///@deprecated
 function LDtkReloadFields() {
+	return;
 	//if (!global.__ldtk_config.escape_fields) {
 	//	__LDtkTrace("Warning: LDtkReloadFields() is called, but the `escape fields` config is turned off.\Did you mean to enable the config or not call the function? (Variables are loaded automatically by default)")
 	//	return -1

@@ -45,9 +45,13 @@ function inLDtkRoom(r = room) {
 
 // iteratively trigger each instance in a chain
 function doTriggerLDtk(e) {
-	while (instance_exists(e)) {
-		var next = e.target; // temporarily store current instance in case onTrigger() calls instance_destroy()
-		e.onTrigger();
-		e = next;
+	with (e) {
+		doTriggerLDtk(target);
+		onTrigger();
 	}
+	//while (instance_exists(e)) {
+	//	var next = e.target; // temporarily store current instance in case onTrigger() calls instance_destroy()
+	//	e.onTrigger();
+	//	e = next;
+	//}
 }

@@ -80,7 +80,10 @@
 					"height": 32,
 					"defUid": 14,
 					"px": [64,64],
-					"fieldInstances": [{ "__identifier": "name", "__type": "String", "__value": "sprBkgDefault", "__tile": null, "defUid": 15, "realEditorValues": [] }],
+					"fieldInstances": [
+						{ "__identifier": "name", "__type": "String", "__value": "sprBkgDefault", "__tile": null, "defUid": 15, "realEditorValues": [] },
+						{ "__identifier": "stretched", "__type": "Bool", "__value": false, "__tile": null, "defUid": 54, "realEditorValues": [] }
+					],
 					"__worldX": 64,
 					"__worldY": 64
 				},
